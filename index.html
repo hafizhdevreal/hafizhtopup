@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Hafizh Topup</title>
+
+<style>
+body {
+  background:#0f172a;
+  color:white;
+  font-family:sans-serif;
+  margin:0;
+}
+
+.container {
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+}
+
+.card {
+  background:#1e293b;
+  padding:20px;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
+
+h2 {
+  margin-bottom:15px;
+}
+
+input {
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+.products {
+  max-height:300px;
+  overflow:auto;
+}
+
+.product {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:#334155;
+  padding:10px;
+  border-radius:12px;
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.product:hover {
+  transform:scale(1.02);
+}
+
+.product.active {
+  background:#22c55e;
+}
+
+.product img {
+  width:40px;
+  height:40px;
+}
+
+button {
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:#22c55e;
+  color:white;
+  font-weight:bold;
+  margin-top:10px;
+  cursor:pointer;
+}
+
+small {
+  color:#cbd5e1;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card">
+    <h2>Hafizh Topup</h2>
+
+    <input id="userId" placeholder="Masukkan ID / Nomor">
+
+    <div class="products" id="products"></div>
+
+    <button onclick="order()">Beli Sekarang</button>
+  </div>
+</div>
+
+<script>
+let selectedProduct = null;
+
+// 🎯 Mapping logo
+function getLogo(name) {
+  name = name.toLowerCase();
+
+  if (name.includes("free fire")) return "https://cdn-icons-png.flaticon.com/512/5968/5968705.png";
+  if (name.includes("mobile legends")) return "https://cdn-icons-png.flaticon.com/512/5968/5968292.png";
+  if (name.includes("pubg")) return "https://cdn-icons-png.flaticon.com/512/5968/5968337.png";
+  if (name.includes("axis")) return "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/AXIS_logo_2014.svg/512px-AXIS_logo_2014.svg.png";
+  if (name.includes("telkomsel")) return "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Telkomsel_2021_icon.svg/512px-Telkomsel_2021_icon.svg.png";
+
+  return "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+}
+
+// 🔄 Load produk dari API backend
+async function loadProducts() {
+  try {
+    const res = await fetch("/api/pricelist");
+    const data = await res.json();
+
+    const container = document.getElementById("products");
+    container.innerHTML = "";
+
+    data.forEach(item => {
+      if (item.status === "OPEN") {
+
+        const div = document.createElement("div");
+        div.className = "product";
+
+        div.innerHTML = `
+          <img src="${getLogo(item.name)}">
+          <div style="text-align:left;">
+            <div>${item.name}</div>
+            <small>Rp${item.price}</small>
+          </div>
+        `;
+
+        div.onclick = () => {
+          document.querySelectorAll(".product").forEach(p => p.classList.remove("active"));
+          div.classList.add("active");
+          selectedProduct = item;
+        };
+
+        container.appendChild(div);
+      }
+    });
+
+  } catch (err) {
+    alert("Gagal load produk");
+  }
+}
+
+// 🚀 Order → WhatsApp
+function order() {
+  const userId = document.getElementById("userId").value;
+
+  if (!userId || !selectedProduct) {
+    alert("Isi ID dan pilih produk dulu!");
+    return;
+  }
+
+  const message = `Halo kak, saya mau topup:
+
+Produk: ${selectedProduct.name}
+Kode: ${selectedProduct.code}
+ID: ${userId}
+Harga: Rp${selectedProduct.price}
+
+Pembayaran:
+DANA / GoPay: 083133527775
+
+Mohon diproses 🙏`;
+
+  const wa = "6283133527775";
+  window.open(`https://wa.me/${wa}?text=${encodeURIComponent(message)}`, "_blank");
+}
+
+loadProducts();
+</script>
+
+</body>
+</html>
